@@ -322,16 +322,16 @@ class WelcomeTenTen {
                                     <span class="status-text">${status === 'completed' ? '✅ 구매완료' : '📋 구매예정'}</span>
                                 </label>
                             </div>
-                            ${item.link && linkPreview ? `
+                            ${item.link ? `
                                 <a href="${item.link}" class="link-preview-card" target="_blank" rel="noopener" onclick="event.stopPropagation()">
-                                    ${linkPreview.image ? `<img src="${linkPreview.image}" class="link-preview-image" alt="${this.escapeHtml(linkPreview.title || '')}" onerror="this.style.display='none'">` : ''}
+                                    ${linkPreview && linkPreview.image ? `<img src="${linkPreview.image}" class="link-preview-image" alt="${this.escapeHtml(item.name)}" onerror="this.style.display='none'">` : ''}
                                     <div class="link-preview-content">
-                                        ${linkPreview.title ? `<div class="link-preview-title">${this.escapeHtml(linkPreview.title)}</div>` : ''}
-                                        ${linkPreview.description ? `<div class="link-preview-description">${this.escapeHtml(linkPreview.description)}</div>` : ''}
+                                        <div class="link-preview-title">${this.escapeHtml(item.name)}</div>
+                                        ${linkPreview && linkPreview.description ? `<div class="link-preview-description">${this.escapeHtml(linkPreview.description)}</div>` : ''}
                                         <div class="link-preview-url">${this.escapeHtml(item.link)}</div>
                                     </div>
                                 </a>
-                            ` : (item.link ? `<a href="${item.link}" class="item-link" target="_blank" rel="noopener">🔗 구매링크</a>` : '')}
+                            ` : ''}
                         </div>
                         <div class="item-actions">
                             <button class="btn-edit-item" data-index="${index}">✏️</button>
@@ -416,6 +416,7 @@ class WelcomeTenTen {
             document.getElementById('productPrice').value = '';
             document.getElementById('actualPrice').value = '';
             document.getElementById('productLink').value = '';
+            document.getElementById('productImage').value = '';
             document.querySelector('input[name="priceOption"][value="same"]').checked = true;
             document.getElementById('actualPrice').disabled = true;
 
@@ -457,6 +458,7 @@ class WelcomeTenTen {
             const actualPrice = priceOption === 'custom' ?
                 parseFloat(document.getElementById('actualPrice').value) || 0 : price;
             const link = document.getElementById('productLink').value.trim();
+            const imageUrl = document.getElementById('productImage').value.trim();
 
             if (!name) {
                 alert('제품명을 입력해주세요.');
@@ -470,25 +472,33 @@ class WelcomeTenTen {
 
             const isCompleted = document.getElementById('purchaseCompleted').checked;
 
+            // 링크 미리보기 정보 생성
+            let linkPreview = null;
+            if (link) {
+                try {
+                    const urlObj = new URL(link);
+                    const domain = urlObj.hostname.replace('www.', '');
+                    linkPreview = {
+                        title: name,
+                        description: `${domain}에서 확인하기`,
+                        image: imageUrl || null,
+                        url: link
+                    };
+                } catch (e) {
+                    linkPreview = null;
+                }
+            }
+
             item = {
                 name: name,
                 price: price,
                 actualPrice: priceOption === 'custom' ? actualPrice : null,
                 link: link || null,
-                linkPreview: null,
+                linkPreview: linkPreview,
                 buyer: this.currentBuyer,
                 purchaseStatus: isCompleted ? 'completed' : 'planned',
                 createdAt: new Date().toISOString()
             };
-
-            // 링크가 있으면 미리보기 데이터 가져오기 (비동기)
-            if (link) {
-                this.fetchLinkPreview(link).then(preview => {
-                    item.linkPreview = preview;
-                    this.saveData();
-                    this.renderItems();
-                });
-            }
         }
 
         if (this.editingItemIndex !== null) {
@@ -560,6 +570,11 @@ class WelcomeTenTen {
                     btn.classList.remove('selected');
                 }
             });
+
+            // 이미지 URL 로드
+            if (item.linkPreview && item.linkPreview.image) {
+                document.getElementById('productImage').value = item.linkPreview.image;
+            }
 
             // 구매 완료 체크박스
             document.getElementById('purchaseCompleted').checked = item.purchaseStatus === 'completed';

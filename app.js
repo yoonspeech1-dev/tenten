@@ -12,9 +12,8 @@ class WelcomeTenTen {
     }
 
     init() {
-        this.loadData();
         this.bindEvents();
-        this.setupFirebaseSync();
+        this.loadData();
     }
 
     // Firebase 실시간 동기화 설정
@@ -25,7 +24,11 @@ class WelcomeTenTen {
             // 실시간 업데이트 수신
             categoriesRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                if (data && Array.isArray(data)) {
+                // Firebase에서 데이터가 null이면 빈 배열로 처리
+                if (data === null) {
+                    return; // 초기 로드는 loadData()에서 처리
+                }
+                if (Array.isArray(data)) {
                     this.categories = data;
                     this.renderCategories();
 
@@ -59,9 +62,14 @@ class WelcomeTenTen {
                             console.error('로컬 데이터 로드 실패:', e);
                             this.categories = [];
                         }
+                    } else {
+                        // 로컬스토리지도 비어있으면 빈 배열
+                        this.categories = [];
                     }
                 }
                 this.renderCategories();
+                // 데이터 로드 후 실시간 동기화 시작
+                this.setupFirebaseSync();
             }).catch((error) => {
                 console.error('Firebase 데이터 로드 실패:', error);
                 // Firebase 실패 시 로컬스토리지 사용

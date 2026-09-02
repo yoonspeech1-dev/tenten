@@ -29,7 +29,11 @@ class WelcomeTenTen {
                     return; // 초기 로드는 loadData()에서 처리
                 }
                 if (Array.isArray(data)) {
-                    this.categories = data;
+                    // Firebase가 빈 배열을 null로 저장하므로 복원
+                    this.categories = data.map(cat => ({
+                        ...cat,
+                        items: cat.items || []
+                    }));
                     this.renderCategories();
 
                     // Firebase 데이터를 로컬스토리지에도 백업
@@ -46,13 +50,22 @@ class WelcomeTenTen {
             database.ref('categories').once('value').then((snapshot) => {
                 const data = snapshot.val();
                 if (data && Array.isArray(data)) {
-                    this.categories = data;
+                    // Firebase가 빈 배열을 null로 저장하므로 복원
+                    this.categories = data.map(cat => ({
+                        ...cat,
+                        items: cat.items || []
+                    }));
                 } else {
                     // Firebase가 비어있으면 로컬스토리지에서 마이그레이션
                     const saved = localStorage.getItem('welcomeTenTen');
                     if (saved) {
                         try {
-                            this.categories = JSON.parse(saved);
+                            const data = JSON.parse(saved);
+                            // Firebase가 빈 배열을 null로 저장하므로 복원
+                            this.categories = Array.isArray(data) ? data.map(cat => ({
+                                ...cat,
+                                items: cat.items || []
+                            })) : [];
                             // 로컬 데이터를 Firebase로 업로드
                             if (this.categories.length > 0) {
                                 database.ref('categories').set(this.categories);
@@ -86,11 +99,18 @@ class WelcomeTenTen {
         const saved = localStorage.getItem('welcomeTenTen');
         if (saved) {
             try {
-                this.categories = JSON.parse(saved);
+                const data = JSON.parse(saved);
+                // Firebase가 빈 배열을 null로 저장하므로 복원
+                this.categories = data.map(cat => ({
+                    ...cat,
+                    items: cat.items || []
+                }));
             } catch (e) {
                 console.error('데이터 로드 실패:', e);
                 this.categories = [];
             }
+        } else {
+            this.categories = [];
         }
         this.renderCategories();
     }
@@ -300,13 +320,16 @@ class WelcomeTenTen {
 
     // 카테고리 통계
     getCategoryStats(category) {
+        // Firebase가 빈 배열을 null로 저장할 수 있으므로 체크
+        const items = category.items || [];
+
         const stats = {
-            total: category.items.length,
+            total: items.length,
             completed: 0,
             totalPrice: 0
         };
 
-        category.items.forEach(item => {
+        items.forEach(item => {
             if (category.type === 'checklist') {
                 if (item.completed) stats.completed++;
             } else {
@@ -341,6 +364,11 @@ class WelcomeTenTen {
         const totalPriceContainer = document.getElementById('totalPrice');
 
         if (!this.currentCategory) return;
+
+        // Firebase가 빈 배열을 null로 저장할 수 있으므로 체크
+        if (!this.currentCategory.items) {
+            this.currentCategory.items = [];
+        }
 
         if (this.currentCategory.items.length === 0) {
             container.innerHTML = `

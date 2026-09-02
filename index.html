@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="텐텐이를 위한 출산 준비 체크리스트">
+    <meta name="theme-color" content="#FFB6C1">
+    <title>웰컴텐텐 👶🏻</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 헤더 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="baby-face">👶🏻</div>
+            <h1 class="app-title">웰컴텐텐</h1>
+            <p class="app-subtitle">텐텐이를 위한 준비</p>
+        </div>
+    </header>
+
+    <!-- 메인 컨테이너 -->
+    <main class="container">
+        <!-- 카테고리 추가 버튼 -->
+        <div class="add-category-section">
+            <button class="btn-add-category" id="btnAddCategory">
+                <span class="btn-icon">+</span>
+                새 카테고리 만들기
+            </button>
+        </div>
+
+        <!-- 카테고리 리스트 -->
+        <div class="categories-container" id="categoriesContainer">
+            <!-- 카테고리들이 동적으로 추가됩니다 -->
+        </div>
+    </main>
+
+    <!-- 카테고리 추가 모달 -->
+    <div class="modal" id="modalAddCategory">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>새 카테고리</h2>
+                <button class="btn-close" id="btnCloseModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="categoryName">카테고리 이름</label>
+                    <input type="text" id="categoryName" placeholder="예: 텐텐준비물" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>카테고리 유형</label>
+                    <div class="type-selector">
+                        <button class="type-btn" data-type="checklist">
+                            <span class="type-icon">✓</span>
+                            <span class="type-label">체크리스트</span>
+                        </button>
+                        <button class="type-btn" data-type="shopping">
+                            <span class="type-icon">🛒</span>
+                            <span class="type-label">구매리스트</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="btnCancelCategory">취소</button>
+                <button class="btn btn-primary" id="btnSaveCategory">만들기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 아이템 추가/수정 모달 -->
+    <div class="modal" id="modalAddItem">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="itemModalTitle">항목 추가</h2>
+                <button class="btn-close" id="btnCloseItemModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 체크리스트 입력 -->
+                <div id="checklistInputs" class="item-inputs">
+                    <div class="form-group">
+                        <label for="checklistItemName">할 일</label>
+                        <input type="text" id="checklistItemName" placeholder="예: 배냇저고리 준비하기" maxlength="50">
+                    </div>
+                </div>
+
+                <!-- 구매리스트 입력 -->
+                <div id="shoppingInputs" class="item-inputs" style="display: none;">
+                    <div class="form-group">
+                        <label>등록</label>
+                        <div class="buyer-selector">
+                            <button type="button" class="buyer-btn" data-buyer="mom">
+                                <span class="buyer-label">👩🏻 Mom</span>
+                            </button>
+                            <button type="button" class="buyer-btn" data-buyer="dad">
+                                <span class="buyer-label">👨🏻 Dad</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="productName">제품명</label>
+                        <input type="text" id="productName" placeholder="예: 아기 목욕 타올" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="productPrice">정가</label>
+                        <input type="number" id="productPrice" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>실구매가</label>
+                        <div class="price-option">
+                            <label class="radio-label">
+                                <input type="radio" name="priceOption" value="same" checked>
+                                <span>정가와 동일</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="priceOption" value="custom">
+                                <span>직접 입력</span>
+                            </label>
+                        </div>
+                        <input type="number" id="actualPrice" placeholder="0" min="0" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="productLink">구매 링크 (선택)</label>
+                        <input type="url" id="productLink" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>구매 상태</label>
+                        <div class="status-selector">
+                            <button type="button" class="status-btn" data-status="planned">
+                                <span class="status-label">📋 구매예정</span>
+                            </button>
+                            <button type="button" class="status-btn" data-status="completed">
+                                <span class="status-label">✅ 구매완료</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" id="btnCancelItem">취소</button>
+                <button class="btn btn-primary" id="btnSaveItem">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 카테고리 상세보기 모달 -->
+    <div class="modal" id="modalCategoryDetail">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="categoryDetailTitle"></h2>
+                <button class="btn-close" id="btnCloseCategoryDetail">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="category-actions">
+                    <button class="btn btn-primary btn-add-item" id="btnAddItem">
+                        <span class="btn-icon">+</span> 항목 추가
+                    </button>
+                </div>
+                <div class="items-list" id="itemsList">
+                    <!-- 아이템들이 동적으로 추가됩니다 -->
+                </div>
+                <div class="total-price" id="totalPrice" style="display: none;">
+                    <span class="total-label">총 합계</span>
+                    <span class="total-amount" id="totalAmount">0원</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnDeleteCategory">카테고리 삭제</button>
+                <button class="btn btn-cancel" id="btnCloseCategoryDetailBottom">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

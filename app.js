@@ -123,15 +123,6 @@ class WelcomeTenTen {
             });
         });
 
-        // 구매 상태 선택
-        document.querySelectorAll('.status-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
-                e.currentTarget.classList.add('selected');
-                this.currentPurchaseStatus = e.currentTarget.dataset.status;
-            });
-        });
-
         // 모달 배경 클릭시 닫기
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
@@ -312,6 +303,9 @@ class WelcomeTenTen {
                 totalPrice += price;
                 const hasDiscount = item.actualPrice && item.actualPrice !== item.price;
 
+                const status = item.purchaseStatus || 'planned';
+                const linkPreview = item.linkPreview;
+
                 return `
                     <div class="item-card">
                         <div class="item-content">
@@ -322,13 +316,25 @@ class WelcomeTenTen {
                                      <span class="item-actual-price">${this.formatPrice(item.actualPrice)}</span>` :
                                     `<span class="item-price">${this.formatPrice(item.price)}</span>`
                                 }
-                                ${item.link ? `<a href="${item.link}" class="item-link" target="_blank" rel="noopener">🔗 구매링크</a>` : ''}
                                 ${item.buyer ? `<span class="buyer-badge ${item.buyer}">${item.buyer === 'mom' ? '👩🏻 Mom' : '👨🏻 Dad'}</span>` : ''}
-                                ${item.purchaseStatus ? `<span class="purchase-status-badge ${item.purchaseStatus}">${item.purchaseStatus === 'planned' ? '📋 구매예정' : '✅ 구매완료'}</span>` : ''}
+                                <label class="purchase-status-toggle">
+                                    <input type="checkbox" class="purchase-status-checkbox" data-index="${index}" ${status === 'completed' ? 'checked' : ''}>
+                                    <span class="status-text">${status === 'completed' ? '✅ 구매완료' : '📋 구매예정'}</span>
+                                </label>
                             </div>
+                            ${item.link && linkPreview ? `
+                                <a href="${item.link}" class="link-preview-card" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+                                    ${linkPreview.image ? `<img src="${linkPreview.image}" class="link-preview-image" alt="${this.escapeHtml(linkPreview.title || '')}" onerror="this.style.display='none'">` : ''}
+                                    <div class="link-preview-content">
+                                        ${linkPreview.title ? `<div class="link-preview-title">${this.escapeHtml(linkPreview.title)}</div>` : ''}
+                                        ${linkPreview.description ? `<div class="link-preview-description">${this.escapeHtml(linkPreview.description)}</div>` : ''}
+                                        <div class="link-preview-url">${this.escapeHtml(item.link)}</div>
+                                    </div>
+                                </a>
+                            ` : (item.link ? `<a href="${item.link}" class="item-link" target="_blank" rel="noopener">🔗 구매링크</a>` : '')}
                         </div>
                         <div class="item-actions">
-                            ${item.purchaseStatus === 'planned' ? `<button class="btn-mark-completed" data-index="${index}">✅ 구매완료</button>` : ''}
+                            <button class="btn-edit-item" data-index="${index}">✏️</button>
                             <button class="btn-delete-item" data-index="${index}">×</button>
                         </div>
                     </div>
@@ -339,6 +345,15 @@ class WelcomeTenTen {
             totalPriceContainer.style.display = 'flex';
         }
 
+        // 수정 버튼 이벤트
+        container.querySelectorAll('.btn-edit-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.editItem(index);
+            });
+        });
+
         // 삭제 버튼 이벤트
         container.querySelectorAll('.btn-delete-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -348,12 +363,12 @@ class WelcomeTenTen {
             });
         });
 
-        // 구매완료 버튼 이벤트
-        container.querySelectorAll('.btn-mark-completed').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // 구매 상태 체크박스 이벤트
+        container.querySelectorAll('.purchase-status-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
                 e.stopPropagation();
                 const index = parseInt(e.currentTarget.dataset.index);
-                this.markItemAsCompleted(index);
+                this.togglePurchaseStatus(index);
             });
         });
     }
@@ -404,11 +419,10 @@ class WelcomeTenTen {
             document.querySelector('input[name="priceOption"][value="same"]').checked = true;
             document.getElementById('actualPrice').disabled = true;
 
-            // 구매자 및 구매 상태 초기화
+            // 구매자 및 구매 완료 체크박스 초기화
             document.querySelectorAll('.buyer-btn').forEach(b => b.classList.remove('selected'));
-            document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('purchaseCompleted').checked = false;
             this.currentBuyer = null;
-            this.currentPurchaseStatus = null;
         }
 
         document.getElementById('modalAddItem').classList.add('active');
@@ -454,23 +468,38 @@ class WelcomeTenTen {
                 return;
             }
 
-            if (!this.currentPurchaseStatus) {
-                alert('구매 상태를 선택해주세요.');
-                return;
-            }
+            const isCompleted = document.getElementById('purchaseCompleted').checked;
 
             item = {
                 name: name,
                 price: price,
                 actualPrice: priceOption === 'custom' ? actualPrice : null,
                 link: link || null,
+                linkPreview: null,
                 buyer: this.currentBuyer,
-                purchaseStatus: this.currentPurchaseStatus,
+                purchaseStatus: isCompleted ? 'completed' : 'planned',
                 createdAt: new Date().toISOString()
             };
+
+            // 링크가 있으면 미리보기 데이터 가져오기 (비동기)
+            if (link) {
+                this.fetchLinkPreview(link).then(preview => {
+                    item.linkPreview = preview;
+                    this.saveData();
+                    this.renderItems();
+                });
+            }
         }
 
-        this.currentCategory.items.push(item);
+        if (this.editingItemIndex !== null) {
+            // 수정 모드
+            this.currentCategory.items[this.editingItemIndex] = item;
+            this.editingItemIndex = null;
+        } else {
+            // 새로 추가
+            this.currentCategory.items.push(item);
+        }
+
         this.saveData();
         this.renderItems();
         this.renderCategories();
@@ -491,15 +520,84 @@ class WelcomeTenTen {
         this.closeCategoryDetailModal();
     }
 
-    // 아이템을 구매완료로 변경
-    markItemAsCompleted(index) {
+    // 아이템 수정
+    editItem(index) {
         if (!this.currentCategory) return;
-        if (!this.currentCategory.items[index]) return;
+        const item = this.currentCategory.items[index];
+        if (!item) return;
 
-        this.currentCategory.items[index].purchaseStatus = 'completed';
+        this.editingItemIndex = index;
+        document.getElementById('itemModalTitle').textContent = '항목 수정';
+
+        if (this.currentCategory.type === 'checklist') {
+            document.getElementById('checklistInputs').style.display = 'block';
+            document.getElementById('shoppingInputs').style.display = 'none';
+            document.getElementById('checklistItemName').value = item.name;
+        } else {
+            document.getElementById('checklistInputs').style.display = 'none';
+            document.getElementById('shoppingInputs').style.display = 'block';
+
+            document.getElementById('productName').value = item.name;
+            document.getElementById('productPrice').value = item.price || 0;
+            document.getElementById('productLink').value = item.link || '';
+
+            if (item.actualPrice && item.actualPrice !== item.price) {
+                document.querySelector('input[name="priceOption"][value="custom"]').checked = true;
+                document.getElementById('actualPrice').disabled = false;
+                document.getElementById('actualPrice').value = item.actualPrice;
+            } else {
+                document.querySelector('input[name="priceOption"][value="same"]').checked = true;
+                document.getElementById('actualPrice').disabled = true;
+                document.getElementById('actualPrice').value = '';
+            }
+
+            // 구매자 선택
+            document.querySelectorAll('.buyer-btn').forEach(btn => {
+                if (btn.dataset.buyer === item.buyer) {
+                    btn.classList.add('selected');
+                    this.currentBuyer = item.buyer;
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+
+            // 구매 완료 체크박스
+            document.getElementById('purchaseCompleted').checked = item.purchaseStatus === 'completed';
+        }
+
+        document.getElementById('modalAddItem').classList.add('active');
+    }
+
+    // 구매 상태 토글
+    togglePurchaseStatus(index) {
+        if (!this.currentCategory) return;
+        const item = this.currentCategory.items[index];
+        if (!item) return;
+
+        item.purchaseStatus = item.purchaseStatus === 'completed' ? 'planned' : 'completed';
         this.saveData();
         this.renderItems();
         this.renderCategories();
+    }
+
+    // 링크 미리보기 가져오기
+    async fetchLinkPreview(url) {
+        // 간단한 URL 파싱으로 도메인 추출
+        try {
+            const urlObj = new URL(url);
+            const domain = urlObj.hostname.replace('www.', '');
+
+            // 실제 구현에서는 서버 API를 통해 Open Graph 정보를 가져와야 하지만,
+            // 여기서는 클라이언트 전용이므로 기본 정보만 저장
+            return {
+                title: `${domain}의 상품`,
+                description: url,
+                image: null,
+                url: url
+            };
+        } catch (e) {
+            return null;
+        }
     }
 
     // 가격 포맷

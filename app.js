@@ -7,6 +7,7 @@ class WelcomeTenTen {
         this.editingItemIndex = null;
         this.currentBuyer = null;
         this.currentPurchaseStatus = null;
+        this.isSaving = false; // 저장 중 플래그
 
         this.init();
     }
@@ -23,10 +24,20 @@ class WelcomeTenTen {
 
             // 실시간 업데이트 수신
             categoriesRef.on('value', (snapshot) => {
+                // 로컬에서 저장 중이면 무시 (자신의 변경사항)
+                if (this.isSaving) {
+                    return;
+                }
+
                 const data = snapshot.val();
                 // Firebase에서 데이터가 null이면 빈 배열로 처리
                 if (data === null) {
-                    return; // 초기 로드는 loadData()에서 처리
+                    // 데이터가 삭제되었을 때만 빈 배열로 설정
+                    if (this.categories.length > 0) {
+                        this.categories = [];
+                        this.renderCategories();
+                    }
+                    return;
                 }
                 if (Array.isArray(data)) {
                     // Firebase가 빈 배열을 null로 저장하므로 복원
@@ -34,6 +45,15 @@ class WelcomeTenTen {
                         ...cat,
                         items: cat.items || []
                     }));
+
+                    // 현재 열려있는 카테고리가 있다면 참조 업데이트
+                    if (this.currentCategory) {
+                        this.currentCategory = this.categories.find(c => c.id === this.currentCategory.id);
+                        if (this.currentCategory) {
+                            this.renderItems();
+                        }
+                    }
+
                     this.renderCategories();
 
                     // Firebase 데이터를 로컬스토리지에도 백업
@@ -126,12 +146,18 @@ class WelcomeTenTen {
 
         // Firebase에 저장
         if (database) {
+            this.isSaving = true; // 저장 시작
             database.ref('categories').set(this.categories)
                 .then(() => {
                     console.log('Firebase 저장 성공');
+                    // 저장 완료 후 약간의 지연을 두고 플래그 해제
+                    setTimeout(() => {
+                        this.isSaving = false;
+                    }, 500);
                 })
                 .catch((error) => {
                     console.error('Firebase 저장 실패:', error);
+                    this.isSaving = false; // 실패 시에도 플래그 해제
                     alert('데이터 저장에 실패했습니다. 인터넷 연결을 확인해주세요.');
                 });
         }

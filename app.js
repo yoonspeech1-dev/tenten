@@ -14,11 +14,67 @@ class WelcomeTenTen {
     init() {
         this.loadData();
         this.bindEvents();
-        this.renderCategories();
+        this.setupFirebaseSync();
     }
 
-    // 로컬스토리지에서 데이터 로드
+    // Firebase 실시간 동기화 설정
+    setupFirebaseSync() {
+        if (database) {
+            const categoriesRef = database.ref('categories');
+
+            // 실시간 업데이트 수신
+            categoriesRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data)) {
+                    this.categories = data;
+                    this.renderCategories();
+
+                    // Firebase 데이터를 로컬스토리지에도 백업
+                    localStorage.setItem('welcomeTenTen', JSON.stringify(this.categories));
+                }
+            });
+        }
+    }
+
+    // 데이터 로드 (Firebase 또는 로컬스토리지)
     loadData() {
+        if (database) {
+            // Firebase에서 로드
+            database.ref('categories').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data)) {
+                    this.categories = data;
+                } else {
+                    // Firebase가 비어있으면 로컬스토리지에서 마이그레이션
+                    const saved = localStorage.getItem('welcomeTenTen');
+                    if (saved) {
+                        try {
+                            this.categories = JSON.parse(saved);
+                            // 로컬 데이터를 Firebase로 업로드
+                            if (this.categories.length > 0) {
+                                database.ref('categories').set(this.categories);
+                                console.log('로컬 데이터를 Firebase로 마이그레이션했습니다.');
+                            }
+                        } catch (e) {
+                            console.error('로컬 데이터 로드 실패:', e);
+                            this.categories = [];
+                        }
+                    }
+                }
+                this.renderCategories();
+            }).catch((error) => {
+                console.error('Firebase 데이터 로드 실패:', error);
+                // Firebase 실패 시 로컬스토리지 사용
+                this.loadFromLocalStorage();
+            });
+        } else {
+            // Firebase 없으면 로컬스토리지 사용
+            this.loadFromLocalStorage();
+        }
+    }
+
+    // 로컬스토리지에서 로드
+    loadFromLocalStorage() {
         const saved = localStorage.getItem('welcomeTenTen');
         if (saved) {
             try {
@@ -28,15 +84,28 @@ class WelcomeTenTen {
                 this.categories = [];
             }
         }
+        this.renderCategories();
     }
 
-    // 로컬스토리지에 데이터 저장
+    // 데이터 저장 (Firebase 및 로컬스토리지)
     saveData() {
+        // 로컬스토리지에 백업
         try {
             localStorage.setItem('welcomeTenTen', JSON.stringify(this.categories));
         } catch (e) {
-            console.error('데이터 저장 실패:', e);
-            alert('데이터 저장에 실패했습니다.');
+            console.error('로컬 저장 실패:', e);
+        }
+
+        // Firebase에 저장
+        if (database) {
+            database.ref('categories').set(this.categories)
+                .then(() => {
+                    console.log('Firebase 저장 성공');
+                })
+                .catch((error) => {
+                    console.error('Firebase 저장 실패:', error);
+                    alert('데이터 저장에 실패했습니다. 인터넷 연결을 확인해주세요.');
+                });
         }
     }
 

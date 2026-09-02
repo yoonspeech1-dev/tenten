@@ -21,9 +21,11 @@
 - 구매 링크 저장 및 바로가기
 - 총 합계 금액 자동 계산
 
-### 💾 데이터 저장
-- 브라우저 로컬스토리지에 자동 저장
-- 앱을 다시 열어도 데이터 유지
+### 💾 데이터 저장 및 실시간 동기화
+- **Firebase 실시간 데이터베이스** 연동
+- 여러 기기에서 동시에 사용 가능
+- 한쪽에서 수정하면 다른 기기에 즉시 반영
+- 로컬스토리지에도 백업 (오프라인 지원)
 
 ### 📱 모바일 최적화
 - 모바일 우선 반응형 디자인
@@ -32,8 +34,19 @@
 
 ## 사용 방법
 
+### 0. Firebase 설정 (필수!)
+데이터를 여러 기기에서 공유하려면 Firebase 설정이 필요합니다.
+자세한 설명은 [FIREBASE_SETUP.md](FIREBASE_SETUP.md) 파일을 참고하세요.
+
+**간단 요약:**
+1. https://console.firebase.google.com 에서 프로젝트 생성
+2. Realtime Database 활성화
+3. 웹 앱 추가 후 설정 정보 복사
+4. `firebase-config.js` 파일에 설정 정보 입력
+5. GitHub에 push
+
 ### 1. 앱 실행
-브라우저에서 `index.html` 파일을 엽니다.
+https://yoonspeech1-dev.github.io/tenten/ 에서 바로 사용 가능합니다.
 
 ### 2. 카테고리 만들기
 1. "새 카테고리 만들기" 버튼 클릭
@@ -58,7 +71,8 @@
 - HTML5
 - CSS3 (파스텔 컬러, 모바일 최적화)
 - Vanilla JavaScript
-- LocalStorage
+- Firebase Realtime Database (실시간 동기화)
+- LocalStorage (오프라인 백업)
 
 ## 디자인 특징
 

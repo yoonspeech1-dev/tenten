@@ -3,13 +3,13 @@
 // 아래 설정값을 업데이트하세요
 
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyA5SRGJBJkCHTMxDNVRV8Ah_0rzUesVjjw",
+    authDomain: "tenten-36616.firebaseapp.com",
+    databaseURL: "https://tenten-36616-default-rtdb.firebaseio.com",
+    projectId: "tenten-36616",
+    storageBucket: "tenten-36616.firebasestorage.app",
+    messagingSenderId: "800442078034",
+    appId: "1:800442078034:web:63d1df006d6b0c06bc208b"
 };
 
 // Firebase 초기화

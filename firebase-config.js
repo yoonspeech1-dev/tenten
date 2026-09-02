@@ -5,7 +5,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyA5SRGJBJkCHTMxDNVRV8Ah_0rzUesVjjw",
     authDomain: "tenten-36616.firebaseapp.com",
-    databaseURL: "https://tenten-36616-default-rtdb.firebaseio.com",
+    databaseURL: "https://tenten-36616-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "tenten-36616",
     storageBucket: "tenten-36616.firebasestorage.app",
     messagingSenderId: "800442078034",
